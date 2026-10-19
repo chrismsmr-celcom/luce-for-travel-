@@ -93,9 +93,11 @@ export default function Home() {
     setErr("");
     if (text.trim().length < 5) return setErr("Décrivez votre voyage en une phrase.");
     setPhase("loading"); setRes(null); setSel({}); setOk(false); setAgent(null); setTrace([]);
+    let j0 = "";
     try {
       const r = await fetch("/api/agent", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: text, org: f.org, cur: f.cur }) });
       const j = await r.json();
+      j0 = j.detail || "";
       if (!r.ok) throw new Error(j.error || "erreur");
       const nf = { ...f, ...(j.params || {}) }; setF(nf);
       setRes(j.results); setDemo(!!j.demo); setTrace(j.trace || []);
@@ -103,7 +105,7 @@ export default function Home() {
       saveHist(text, nf.dest, nf.d1); setPhase("done"); scroll();
     } catch (x) {
       setPhase("idle");
-      setErr(x.message === "NO_AI_KEY" ? "Luce n’a pas encore sa clé IA (DEEPSEEK_API_KEY). Utilisez « Actualiser les offres » en attendant." : "Luce n’a pas pu traiter la demande. Réessayez.");
+      setErr(x.message === "NO_AI_KEY" ? "Luce n’a pas encore sa clé IA (DEEPSEEK_API_KEY). Utilisez « Actualiser les offres » en attendant." : `Luce n’a pas pu traiter la demande${j0 ? " (" + j0 + ")" : ""}. Réessayez.`);
     }
   }
 

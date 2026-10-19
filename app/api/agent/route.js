@@ -40,7 +40,9 @@ async function llm(messages) {
   const r = await fetch(`${base}/chat/completions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${AI_KEY()}`, "content-type": "application/json" },
-    body: JSON.stringify({ model: process.env.DEEPSEEK_MODEL || process.env.AI_MODEL || "deepseek-v4-flash", messages, tools: OAI_TOOLS, max_tokens: 1500, temperature: 0.3 }),
+    body: JSON.stringify({ model: process.env.DEEPSEEK_MODEL || process.env.AI_MODEL || "deepseek-v4-flash", messages, tools: OAI_TOOLS, max_tokens: 1500, temperature: 0.3,
+      // V4 : réflexion désactivée par défaut (plus rapide, moins cher). DEEPSEEK_THINKING=enabled pour l’activer.
+      thinking: { type: process.env.DEEPSEEK_THINKING === "enabled" ? "enabled" : "disabled" } }),
   });
   if (!r.ok) throw new Error(`LLM ${r.status}: ${(await r.text()).slice(0, 160)}`);
   return (await r.json()).choices[0].message;
@@ -96,7 +98,7 @@ export async function POST(req) {
   try {
     for (let n = 0; n < 7 && !plan; n++) {
       const msg = await llm(messages);
-      messages.push({ role: "assistant", content: msg.content || "", tool_calls: msg.tool_calls });
+      messages.push({ role: "assistant", content: msg.content || "", tool_calls: msg.tool_calls, ...(msg.reasoning_content ? { reasoning_content: msg.reasoning_content } : {}) });
       if (!msg.tool_calls?.length) break;
       for (const call of msg.tool_calls) {
         let c;
@@ -108,6 +110,7 @@ export async function POST(req) {
       }
     }
   } catch (e) {
+    console.error("[luce/agent]", e.message);
     return NextResponse.json({ error: "AI_ERROR", detail: e.message }, { status: 502 });
   }
   return NextResponse.json({ demo, params, results: store, plan, trace });
