@@ -1,273 +1,248 @@
-/* ============================================================
-   LUCE — Design System v2 (basé sur le logo : goutte bleue)
-   ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+"use client";
+import { useEffect, useMemo, useState } from "react";
 
-:root{
-  --bg:#eaf1fc;
-  --bg2:#f7faff;
-  --panel:#ffffff;
-  --soft:#f2f6fd;
-  --ink:#0f1d38;
-  --mute:#68779b;
-  --line:#e3eafb;
-  --ac:#2168c0;            /* bleu du logo */
-  --ac2:#4a9df0;           /* bleu clair */
-  --acs:#e1efff;
-  --on:#ffffff;
-  --star:#f5b301;
-  --bad:#d04a3c;
-  --good:#1d9e6f;
-  --grad:linear-gradient(135deg,#1d5fb0 0%,#3f8fe8 100%);
-  --grad-soft:linear-gradient(135deg,#e1efff 0%,#eef6ff 100%);
-  --sh:0 24px 70px rgba(29,75,150,.18);
-  --sh-sm:0 6px 20px rgba(29,75,150,.10);
-  --r-lg:28px; --r-md:20px; --r-sm:14px;
-  --sans:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+const P = {
+  home: "M3 11l9-8 9 8M5 10v10h14V10", compass: "M12 3a9 9 0 100 18 9 9 0 000-18zM16 8l-2 6-6 2 2-6z",
+  heart: "M12 20s-7-4.5-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.5-9 9-9 9z", pin: "M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11zM12 12a2.5 2.5 0 100-5 2.5 2.5 0 000 5z",
+  bag: "M5 8h14l-1 12H6zM9 8V6a3 3 0 016 0v2", globe: "M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18",
+  bed: "M3 18V7M3 14h18v4M21 14v-2a3 3 0 00-3-3h-7v5", plane: "M21 16l-8-4.5V6a1.5 1.5 0 00-3 0v5.5L2 16v2l8-2v3l-2 1.5V22l4-1 4 1v-1.5L14 19v-3l7 2z",
+  ticket: "M3 9V6h18v3a3 3 0 000 6v3H3v-3a3 3 0 000-6zM14 6v12", star: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",
+  search: "M11 4a7 7 0 100 14 7 7 0 000-14zM21 21l-5-5", r: "M9 6l6 6-6 6", l: "M15 6l-6 6 6 6",
+  cal: "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4", clock: "M12 4a8 8 0 100 16 8 8 0 000-16zM12 8v4l3 2", mail: "M3 6h18v12H3zM3 7l9 7 9-7",
+};
+const Ic = ({ n, f }) => <svg className={"ic" + (f ? " f" : "")} viewBox="0 0 24 24" aria-hidden="true"><path d={P[n]} /></svg>;
+
+/* Vrai logo (placez logo.png dans /public) */
+const Logo = () => <img src="/logo.png" alt="Logo Luce" width="34" height="34" />;
+const Brand = () => <div className="logo"><Logo />Luce</div>;
+
+const ONE = { hotels: "Hôtel", flights: "Vol", tours: "Activité" };
+const CATS = [["all", "globe", "Tout"], ["hotels", "bed", "Hôtels"], ["flights", "plane", "Vols"], ["tours", "ticket", "Activités"]];
+const IDEAS = ["Week-end à Lisbonne, budget 800 $", "Acheter des marchandises à Guangzhou, 5 jours", "Une semaine à Istanbul en novembre"];
+const toIso = (d) => d.toISOString().slice(0, 10);
+const plus = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return toIso(d); };
+const fd = (k) => (k ? new Date(k + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "…");
+const hue = (s) => [...String(s)].reduce((a, c) => a + c.charCodeAt(0) * 7, 0) % 360;
+const art = (id) => { const h = hue(id); return { background: `radial-gradient(120% 90% at 15% 10%, hsl(${h} 95% 74%), transparent 60%), radial-gradient(110% 90% at 90% 95%, hsl(${(h + 70) % 360} 85% 60%), hsl(${(h + 140) % 360} 55% 30%))` }; };
+
+function propose(res, budget) {
+  const flight = [...res.flights].sort((a, b) => a.total - b.total)[0];
+  const base = flight?.total || 0;
+  const hotel = [...res.hotels].filter((h) => h.total + base <= budget).sort((a, b) => b.rating - a.rating || a.total - b.total)[0] || [...res.hotels].sort((a, b) => a.total - b.total)[0];
+  const out = {};
+  if (hotel) out.hotels = hotel;
+  if (flight) out.flights = flight;
+  const used = (hotel?.total || 0) + base;
+  const tour = [...res.tours].sort((a, b) => b.rating - a.rating).find((t) => used + t.total <= budget);
+  if (tour) out.tours = tour;
+  return out;
 }
-@media (prefers-color-scheme:dark){
-  :root{
-    --bg:#0c1526; --bg2:#101c33;
-    --panel:#152240; --soft:#101b33;
-    --ink:#eef3ff; --mute:#8ea0c6; --line:#23345c;
-    --ac:#5ea1f2; --ac2:#7fb9ff; --acs:#1d3159;
-    --on:#0a1322; --bad:#ff8577; --good:#4ad6a3;
-    --grad:linear-gradient(135deg,#2f7de0 0%,#5ea1f2 100%);
-    --grad-soft:linear-gradient(135deg,#16294e 0%,#101d3a 100%);
-    --sh:0 24px 70px rgba(0,0,0,.55); --sh-sm:0 6px 20px rgba(0,0,0,.4);
+
+function Cal({ d1, d2, pick }) {
+  const [v, setV] = useState(() => { const d = new Date(d1); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  useEffect(() => { const d = new Date(d1); setV(new Date(d.getFullYear(), d.getMonth(), 1)); }, [d1]);
+  const y = v.getFullYear(), m = v.getMonth(), first = (new Date(y, m, 1).getDay() + 6) % 7, dim = new Date(y, m + 1, 0).getDate(), now = toIso(new Date());
+  const cells = [];
+  for (let i = 0; i < first; i++) cells.push(<i key={"b" + i} />);
+  for (let d = 1; d <= dim; d++) {
+    const k = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    cells.push(<button key={k} type="button" disabled={k < now} className={k === d1 || k === d2 ? "e" : d2 && k > d1 && k < d2 ? "in" : ""} onClick={() => pick(k)}>{d}</button>);
   }
+  return (
+    <>
+      <h3 className="cal-head">{v.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+        <span className="mn"><button type="button" aria-label="Mois précédent" onClick={() => setV(new Date(y, m - 1, 1))}><Ic n="l" /></button><button type="button" aria-label="Mois suivant" onClick={() => setV(new Date(y, m + 1, 1))}><Ic n="r" /></button></span></h3>
+      <div className="cal">{["L", "M", "M", "J", "V", "S", "D"].map((d, i) => <span key={i}>{d}</span>)}{cells}</div>
+    </>
+  );
 }
 
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  margin:0;color:var(--ink);
-  font:15px/1.5 var(--sans);
-  min-height:100dvh;overflow-x:hidden;position:relative;
-  padding:max(12px,env(safe-area-inset-top,0px)) 12px calc(120px + env(safe-area-inset-bottom,0px));
-  background:
-    radial-gradient(60% 45% at 85% -5%,rgba(74,157,240,.22),transparent 60%),
-    radial-gradient(50% 40% at -10% 30%,rgba(33,104,192,.14),transparent 60%),
-    linear-gradient(180deg,var(--bg2),var(--bg));
-  background-attachment:fixed;
+const Pic = ({ x }) => (x.img ? <img src={x.img} alt="" loading="lazy" /> : null);
+
+export default function Home() {
+  const [f, setF] = useState({ org: "FIH", dest: "Guangzhou, CN", d1: plus(21), d2: plus(26), pax: 1, budget: 1500, cur: "USD" });
+  const [msg, setMsg] = useState("");
+  const [tab, setTab] = useState("all");
+  const [res, setRes] = useState(null);
+  const [agent, setAgent] = useState(null);
+  const [trace, setTrace] = useState([]);
+  const [phase, setPhase] = useState("idle");
+  const [demo, setDemo] = useState(false);
+  const [sel, setSel] = useState({});
+  const [open, setOpen] = useState(false);
+  const [ok, setOk] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [hist, setHist] = useState([]);
+  const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
+
+  useEffect(() => { try { setHist(JSON.parse(localStorage.getItem("luce_h") || "[]")); } catch {} }, []);
+  const saveHist = (q, dest, d1) => { try { const h = [{ q, dest, d1 }, ...hist.filter((x) => x.q !== q)].slice(0, 3); setHist(h); localStorage.setItem("luce_h", JSON.stringify(h)); } catch {} };
+
+  const fmt = (n) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: f.cur, currencyDisplay: "narrowSymbol", maximumFractionDigits: 0 }).format(n);
+  const nights = Math.max(1, Math.round((new Date(f.d2) - new Date(f.d1)) / 864e5));
+  const chosen = Object.values(sel).filter(Boolean);
+  const total = chosen.reduce((a, x) => a + x.total, 0);
+  const over = total > f.budget;
+  const plan = useMemo(() => (agent?.sel ? agent.sel : res ? propose(res, f.budget) : {}), [res, f.budget, agent]);
+  const planKeys = new Set(Object.values(plan).map((x) => x.type + x.id));
+  const all = res ? (tab === "all" ? [...res.hotels, ...res.flights, ...res.tours] : res[tab]) : [];
+  const rec = [...all].sort((a, b) => planKeys.has(b.type + b.id) - planKeys.has(a.type + a.id) || b.rating - a.rating).slice(0, 4);
+  const pop = all.filter((x) => !rec.includes(x)).sort((a, b) => a.total - b.total).slice(0, 8);
+  const isSel = (x) => sel[x.type]?.id === x.id;
+  const toggle = (x) => setSel((s) => ({ ...s, [x.type]: s[x.type]?.id === x.id ? undefined : x }));
+  const scroll = () => setTimeout(() => document.getElementById("res")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  const pickDate = (k) => setF((s) => (!s.d2 || k <= s.d1 ? { ...s, d1: k, d2: "" } : { ...s, d2: k }));
+
+  async function ask(text) {
+    setErr("");
+    if (text.trim().length < 5) return setErr("Décrivez votre voyage en une phrase.");
+    setPhase("loading"); setRes(null); setSel({}); setOk(false); setAgent(null); setTrace([]);
+    let j0 = "";
+    try {
+      const r = await fetch("/api/agent", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: text, org: f.org, cur: f.cur }) });
+      const j = await r.json();
+      j0 = j.detail || "";
+      if (!r.ok) throw new Error(j.error || "erreur");
+      const nf = { ...f, ...(j.params || {}) }; setF(nf);
+      setRes(j.results); setDemo(!!j.demo); setTrace(j.trace || []);
+      setAgent(j.plan && Object.keys(j.plan.sel).length ? j.plan : null);
+      saveHist(text, nf.dest, nf.d1); setPhase("done"); scroll();
+    } catch (x) {
+      setPhase("idle");
+      setErr(x.message === "NO_AI_KEY" ? "Luce n’a pas encore sa clé IA (DEEPSEEK_API_KEY). Utilisez « Actualiser les offres » en attendant." : `Luce n’a pas pu traiter la demande${j0 ? " (" + j0 + ")" : ""}. Réessayez.`);
+    }
+  }
+
+  async function refresh() {
+    setErr("");
+    const [city, cc] = f.dest.split(",").map((s) => s.trim());
+    if (!city || !cc) return setErr("Destination : ville et code pays, par exemple « Paris, FR ».");
+    if (!f.d2 || f.d2 <= f.d1) return setErr("Choisissez une date de retour dans le calendrier.");
+    setPhase("loading"); setRes(null); setSel({}); setOk(false); setAgent(null); setTrace([]);
+    const base = { city, cc, org: f.org, checkin: f.d1, checkout: f.d2, adults: f.pax, cur: f.cur };
+    const out = {}; let anyDemo = false;
+    await Promise.all(["hotels", "flights", "tours"].map(async (t) => {
+      try { const j = await (await fetch("/api/search?" + new URLSearchParams({ ...base, type: t }))).json(); out[t] = j.items || []; anyDemo = anyDemo || !!j.demo; } catch { out[t] = []; }
+    }));
+    setDemo(anyDemo); setRes(out); setPhase("done"); scroll();
+  }
+
+  async function pay() {
+    setBusy(true); setErr("");
+    try {
+      const r = await fetch("/api/deeplink", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sel, checkin: f.d1, checkout: f.d2, adults: f.pax, cur: f.cur, total }) });
+      const j = await r.json(); if (!j.url) throw new Error();
+      window.location.assign(j.url);
+    } catch { setErr("Le lien de paiement n’a pas pu être créé. Réessayez."); setBusy(false); }
+  }
+
+  const line = (x) => x.type === "hotels" ? <><span><Ic n="cal" />{fd(f.d1)}</span><span><Ic n="clock" />{nights} nuits</span></> : <span>{x.sub}</span>;
+
+  return (
+    <>
+      <div className="orb o1" aria-hidden="true" /><div className="orb o2" aria-hidden="true" />
+      <div className="shell">
+        <aside className="side">
+          <Brand />
+          <button className="nav on"><Ic n="home" />Accueil</button>
+          {[["compass", "Explorer"], ["heart", "Favoris"], ["pin", "Destinations"], ["mail", "Messages"]].map(([i, l]) => <button key={l} className="nav" disabled title="Bientôt"><Ic n={i} />{l}</button>)}
+          <div className="promo">Luce prépare, vous validez.<br /><span>Paiement sur Luviaplace</span></div>
+        </aside>
+
+        <main className="main">
+          <div className="mtop"><Brand /></div>
+          <div className="head">
+            <h1>Découvrez la <em>beauté</em> du monde !</h1>
+            <form className="search" onSubmit={(e) => { e.preventDefault(); ask(msg); }}>
+              <Ic n="search" />
+              <input value={msg} onChange={(e) => setMsg(e.target.value)} maxLength={600} aria-label="Dites à Luce où vous allez" placeholder="Où allez-vous ? Dites-le à Luce" />
+              <button className="sbtn" disabled={phase === "loading"}>{phase === "loading" ? "Luce…" : "Chercher"}</button>
+            </form>
+          </div>
+          {!res && phase !== "loading" && <div className="hints">{IDEAS.map((t) => <button key={t} className="hint" onClick={() => { setMsg(t); ask(t); }}>{t}</button>)}</div>}
+
+          <h2>Catégories</h2>
+          <div className="cats">{CATS.map(([k, i, l]) => <button key={k} className={"cat" + (tab === k ? " on" : "")} onClick={() => setTab(k)}><span><Ic n={i} /></span>{l}</button>)}</div>
+
+          <div id="res">
+            {err && <div className="msg err" role="alert">{err}</div>}
+            {phase === "loading" && <div className="msg" aria-live="polite"><span className="spin" />Luce lit votre demande, cherche et compare…</div>}
+            {!res && phase === "idle" && !err && <div className="msg">Décrivez votre voyage : destination, dates, budget. Luce s’occupe du reste.</div>}
+            {demo && res && <div className="msg">Données d’exemple. Ajoutez votre clé LiteAPI pour voir les vraies offres.</div>}
+            {res && (agent || trace.length > 0) && (
+              <div className="lnote"><b>Luce</b> {agent?.summary}
+                {agent?.risks?.length > 0 && <p>À vérifier avant de payer : {agent.risks.join(" · ")}</p>}
+                {trace.length > 0 && <p>Recherches : {trace.join(" · ")}</p>}</div>
+            )}
+            {res && !all.length && <div className="msg">Aucun résultat. Changez les dates ou la destination.</div>}
+            {rec.length > 0 && (<>
+              <h2>Recommandés <small>{all.length} offres</small></h2>
+              <div className="rec">{rec.map((x) => (
+                <button key={x.type + x.id} className={"rc" + (isSel(x) ? " sel" : "")} style={art(x.id)} onClick={() => toggle(x)} aria-pressed={isSel(x)}>
+                  <Pic x={x} />
+                  {planKeys.has(x.type + x.id) && <span className="pick">{isSel(x) ? "Ajouté" : "Choix de Luce"}</span>}
+                  {x.rating > 0 && <span className="rt"><Ic n="star" f />{x.rating.toFixed(1)}</span>}
+                  <b>{x.name}</b><div className="m">{line(x)}</div><div className="pr">{fmt(x.total)}</div>
+                </button>))}</div>
+            </>)}
+            {pop.length > 0 && (<>
+              <h2>Les plus populaires</h2>
+              <div className="pop">{pop.map((x) => (
+                <button key={x.type + x.id} className={"pi" + (isSel(x) ? " sel" : "")} onClick={() => toggle(x)} aria-pressed={isSel(x)}>
+                  <span className="th" style={art(x.id)}><Pic x={x} /></span>
+                  <span className="pc"><span className="t"><b>{x.name}</b>{x.rating > 0 && <span><Ic n="star" f />{x.rating.toFixed(1)}</span>}</span>
+                    <span className="s"><Ic n="pin" />{x.sub || ONE[x.type]}</span>
+                    <span className="p"><small>Dès </small>{fmt(x.total)}</span></span>
+                </button>))}</div>
+            </>)}
+          </div>
+        </main>
+
+        <aside className="right">
+          <h3>Votre voyage</h3>
+          <div className="box">
+            <label className="fld"><span>Départ</span><input value={f.org} maxLength={3} onChange={(e) => set("org", e.target.value.toUpperCase())} /></label>
+            <label className="fld"><span>Destination</span><input value={f.dest} onChange={(e) => set("dest", e.target.value)} /></label>
+            <div className="fld"><span>Voyageurs</span><div className="step"><button type="button" aria-label="Moins" onClick={() => set("pax", Math.max(1, f.pax - 1))}>−</button><b>{f.pax}</b><button type="button" aria-label="Plus" onClick={() => set("pax", Math.min(6, f.pax + 1))}>+</button></div></div>
+            <label className="fld"><span>Budget ({f.cur})</span><input type="number" inputMode="numeric" value={f.budget} onChange={(e) => set("budget", Number(e.target.value) || 0)} /></label>
+            <button className="ghost" onClick={refresh} disabled={phase === "loading"}>Actualiser les offres</button>
+          </div>
+          <Cal d1={f.d1} d2={f.d2} pick={pickDate} />
+          <div className="fld" style={{ justifyContent: "center", color: "var(--mute)" }}>{fd(f.d1)} → {fd(f.d2)}{f.d2 ? ` · ${nights} nuits` : ""}</div>
+          <h3>Dernières recherches</h3>
+          {hist.length ? hist.map((h) => (
+            <button key={h.q} className="last" onClick={() => { setMsg(h.q); ask(h.q); }}>
+              <span className="th" style={art(h.dest)} /><span><b>{h.dest.split(",")[0]}</b><small>{h.q.slice(0, 34)}</small></span></button>
+          )) : <div className="box" style={{ color: "var(--mute)" }}>Vos recherches apparaîtront ici.</div>}
+        </aside>
+      </div>
+
+      {res && (
+        <div className="dock">
+          <div>
+            <small>Votre dossier · {chosen.length} sélection{chosen.length > 1 ? "s" : ""}</small>
+            <b>{fmt(total)}</b> <small className={over ? "ov" : "un"} style={{ display: "inline" }}>{over ? `(+${fmt(total - f.budget)})` : `sur ${fmt(f.budget)}`}</small>
+            <div className="pbar"><i className={over ? "ov" : ""} style={{ width: `${Math.min(100, Math.round((total / Math.max(1, f.budget)) * 100))}%` }} /></div>
+          </div>
+          <button disabled={!chosen.length} onClick={() => setOpen(true)}>Voir le dossier</button>
+        </div>
+      )}
+
+      {open && (
+        <div className="scrim" onClick={(e) => e.target === e.currentTarget && setOpen(false)} onKeyDown={(e) => e.key === "Escape" && setOpen(false)}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-label="Votre dossier de voyage">
+            <header><h2>Votre dossier</h2><button className="link" onClick={() => setOpen(false)}>Fermer</button></header>
+            {chosen.map((x) => (
+              <div className="it" key={x.type}><div>{x.name}<small>{ONE[x.type]}{x.type === "hotels" ? ` · ${nights} nuits` : ""}</small><button className="link" style={{ padding: 0 }} onClick={() => toggle(x)}>Retirer</button></div><strong>{fmt(x.total)}</strong></div>
+            ))}
+            <div className="it"><div>Total<small>{total <= f.budget ? `${fmt(f.budget - total)} sous votre budget` : `${fmt(total - f.budget)} au-dessus de votre budget`}</small></div><strong>{fmt(total)}</strong></div>
+            <label className="ck"><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /><span>J’ai vérifié les dates et les prix, ainsi que les conditions de visa pour ma nationalité.</span></label>
+            <button className="pay" disabled={!ok || busy || !chosen.length} onClick={pay}>{busy ? "Ouverture…" : "Payer sur Luviaplace"}</button>
+            {err && <p className="msg err" role="alert">{err}</p>}
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
-button,input{font:inherit;color:inherit}
-button{cursor:pointer;-webkit-tap-highlight-color:transparent;border:0}
-button:disabled{cursor:default}
-:focus-visible{outline:2.5px solid var(--ac);outline-offset:2px;border-radius:10px}
-::selection{background:var(--acs);color:var(--ink)}
-.ic{width:1.15em;height:1.15em;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
-.ic.f{fill:currentColor;stroke:none}
-
-/* ---- Logo ---- */
-.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.2px}
-.logo img{width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(29,75,150,.35))}
-.side .logo{margin-bottom:30px;font-size:19px}
-.side .logo img{width:38px;height:38px}
-
-/* ---- Décor d'arrière-plan ---- */
-.orb{position:fixed;pointer-events:none;z-index:0}
-.o1{width:130px;height:130px;border-radius:50%;left:-30px;bottom:8%;
-  background:radial-gradient(circle at 30% 30%,#bcd8fb,#7fb3e8 55%,#3f8fe8);
-  filter:blur(2px);opacity:.5;animation:float 9s ease-in-out infinite}
-.o2{width:64px;height:64px;border-radius:18px;right:26%;top:3%;
-  background:linear-gradient(135deg,#dcebff,#9cc4f5);opacity:.55;transform:rotate(20deg);
-  animation:float 11s ease-in-out infinite reverse}
-@keyframes float{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-16px) rotate(8deg)}}
-@media (prefers-reduced-motion:reduce){.orb{animation:none}}
-
-/* ---- Coquille ---- */
-.shell{position:relative;z-index:1;max-width:1280px;margin:0 auto;background:var(--panel);
-  border-radius:var(--r-lg);box-shadow:var(--sh);display:grid;grid-template-columns:minmax(0,1fr);overflow:hidden;
-  border:1px solid rgba(255,255,255,.6)}
-@media (prefers-color-scheme:dark){.shell{border-color:var(--line)}}
-@media (min-width:1040px){.shell{grid-template-columns:200px minmax(0,1fr) 310px}}
-
-/* ---- Barre latérale ---- */
-.side{display:none;padding:28px 16px;flex-direction:column;gap:8px;
-  background:linear-gradient(180deg,var(--grad-soft),transparent)}
-@media (min-width:1040px){.side{display:flex}}
-.nav{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;
-  background:transparent;color:var(--mute);text-align:left;font-weight:600;transition:all .2s}
-.nav:hover:not(:disabled){background:var(--soft);color:var(--ink);transform:translateX(2px)}
-.nav.on{background:var(--grad);color:#fff;box-shadow:0 8px 18px rgba(33,104,192,.35)}
-.nav:disabled{opacity:.6}
-.promo{margin-top:auto;border-radius:18px;padding:16px;background:var(--grad);color:#fff;
-  font-weight:700;font-size:13px;line-height:1.4;box-shadow:0 12px 26px rgba(33,104,192,.35)}
-.promo span{display:inline-block;margin-top:10px;background:#fff;color:var(--ac);border-radius:999px;padding:3px 12px;font-size:11px;font-weight:800}
-
-/* ---- Zone principale ---- */
-.main{background:var(--soft);margin:10px;padding:20px 16px 28px;border-radius:24px;min-width:0;border:1px solid var(--line)}
-@media (min-width:1040px){.main{margin:14px 0;padding:26px}}
-.mtop{display:flex;align-items:center;margin-bottom:16px}
-@media (min-width:1040px){.mtop{display:none}}
-
-h1{margin:0;font-size:clamp(27px,6vw,38px);letter-spacing:-1px;line-height:1.12;font-weight:800}
-h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.head{display:flex;flex-direction:column;gap:14px}
-@media (min-width:760px){.head{flex-direction:row;align-items:center;justify-content:space-between}}
-
-/* ---- Barre de recherche ---- */
-.search{display:flex;align-items:center;gap:8px;background:var(--panel);border:1.5px solid var(--line);
-  border-radius:18px;padding:5px 5px 5px 16px;flex:1;max-width:480px;min-width:0;box-shadow:var(--sh-sm);transition:border-color .2s,box-shadow .2s}
-.search:focus-within{border-color:var(--ac);box-shadow:0 0 0 4px var(--acs)}
-.search .ic{color:var(--mute)}
-.search input{border:0;background:none;outline:0;padding:10px 0;width:100%;min-width:0;font-size:16px}
-.search input::placeholder{color:var(--mute)}
-.sbtn{border:0;background:var(--grad);color:#fff;border-radius:13px;padding:0 18px;min-height:44px;font-weight:800;
-  white-space:nowrap;box-shadow:0 6px 16px rgba(33,104,192,.35);transition:transform .15s,box-shadow .2s,opacity .2s}
-.sbtn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 10px 22px rgba(33,104,192,.45)}
-.sbtn:active:not(:disabled){transform:translateY(0)}
-.sbtn:disabled{opacity:.6;box-shadow:none}
-
-.hints{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-.hint{border:1.5px solid var(--line);background:var(--panel);border-radius:999px;padding:7px 14px;
-  color:var(--mute);font-size:13px;font-weight:600;transition:all .2s}
-.hint:hover{border-color:var(--ac);color:var(--ac);background:var(--acs)}
-
-h2{margin:28px 0 14px;font-size:17px;font-weight:800;display:flex;justify-content:space-between;align-items:baseline;letter-spacing:-.2px}
-h2 small{color:var(--ac);font-weight:700;font-size:13px}
-
-/* ---- Catégories ---- */
-.cats{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
-.cats::-webkit-scrollbar{display:none}
-.cat{background:var(--panel);border:1.5px solid var(--line);border-radius:999px;padding:6px 18px 6px 7px;
-  display:flex;gap:9px;align-items:center;white-space:nowrap;color:var(--mute);font-weight:700;min-height:46px;transition:all .2s}
-.cat span{width:34px;height:34px;border-radius:50%;background:var(--soft);display:grid;place-items:center;transition:all .2s}
-.cat:hover{border-color:var(--ac)}
-.cat.on{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 8px 18px rgba(33,104,192,.35)}
-.cat.on span{background:rgba(255,255,255,.22)}
-
-/* ---- Notes / messages ---- */
-.lnote{background:var(--panel);border-radius:16px;padding:14px 16px;margin-top:16px;
-  border-left:4px solid var(--ac);box-shadow:var(--sh-sm)}
-.lnote b{color:var(--ac)}
-.lnote p{margin:5px 0 0;color:var(--mute);font-size:13px}
-.msg{margin-top:16px;background:var(--panel);border-radius:16px;padding:13px 16px;color:var(--mute);
-  border:1px solid var(--line)}
-.msg.err{color:var(--bad);border-color:var(--bad);background:color-mix(in srgb,var(--bad) 7%,var(--panel))}
-.spin{display:inline-block;width:14px;height:14px;border:2.5px solid var(--line);border-top-color:var(--ac);
-  border-radius:50%;animation:rot .8s linear infinite;vertical-align:-2px;margin-right:8px}
-@keyframes rot{to{transform:rotate(360deg)}}
-
-/* ---- Cartes recommandées ---- */
-.rec{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:4px 16px 10px;scrollbar-width:none}
-.rec::-webkit-scrollbar{display:none}
-.rc{position:relative;flex:0 0 min(64vw,215px);height:200px;scroll-snap-align:start;border-radius:var(--r-md);
-  padding:14px;color:#fff;text-align:left;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;
-  background-size:cover;background-position:center;transition:transform .25s,box-shadow .25s;isolation:isolate}
-.rc::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 32%,rgba(8,20,50,.78));z-index:1}
-.rc>*{position:relative;z-index:2}
-.rc>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;transition:transform .5s}
-.rc:hover{transform:translateY(-4px);box-shadow:0 16px 34px rgba(20,50,110,.35)}
-.rc:hover>img{transform:scale(1.06)}
-.rc b{font-size:15.5px;letter-spacing:-.2px}
-.rc .m{display:flex;gap:10px;font-size:11.5px;opacity:.95;flex-wrap:wrap;margin:3px 0}
-.rc .m span{display:flex;align-items:center;gap:4px}
-.rc .pr{font-weight:800;font-size:16px}
-.rt{position:absolute!important;top:10px;right:10px;background:rgba(255,255,255,.94);color:#1a2440;
-  border-radius:999px;font-size:11px;font-weight:800;padding:3px 9px;display:flex;align-items:center;gap:3px;z-index:3!important}
-.rt .ic{color:var(--star)}
-.pick{position:absolute!important;top:10px;left:10px;background:var(--grad);color:#fff;border-radius:999px;
-  font-size:11px;font-weight:800;padding:3px 10px;z-index:3!important;box-shadow:0 4px 12px rgba(33,104,192,.5)}
-.sel{outline:3px solid var(--ac);outline-offset:2px}
-@media (min-width:760px){.rec{flex-wrap:wrap;overflow:visible;margin:0;padding:0}.rc{flex:0 0 calc(25% - 11px)}}
-
-/* ---- Liste populaire ---- */
-.pop{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:14px}
-.pi{display:flex;gap:12px;background:var(--panel);border:2px solid transparent;border-radius:var(--r-md);
-  padding:10px;text-align:left;align-items:center;min-height:82px;box-shadow:var(--sh-sm);transition:all .2s}
-.pi:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(29,75,150,.16)}
-.pi.sel{outline:0;border-color:var(--ac);background:var(--grad-soft)}
-.th{position:relative;width:64px;height:64px;border-radius:14px;flex:none;overflow:hidden}
-.th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.pc{flex:1;min-width:0}
-.pc .t{display:flex;justify-content:space-between;gap:6px;font-weight:700}
-.pc .t span{display:flex;align-items:center;gap:3px;font-size:12px;flex:none}
-.pc .t .ic{color:var(--star)}
-.pc .s{display:flex;align-items:center;gap:4px;color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pc .p{color:var(--ac);font-weight:800;font-size:15.5px}
-.pc .p small{color:var(--mute);font-weight:500;font-size:12px}
-
-/* ---- Colonne de droite ---- */
-.right{padding:8px 16px 20px;display:flex;flex-direction:column;gap:14px;min-width:0}
-@media (min-width:1040px){.right{padding:26px 20px}}
-.right h3{margin:8px 0 0;font-size:15px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
-.box{background:var(--soft);border:1px solid var(--line);border-radius:var(--r-md);padding:14px;display:grid;gap:12px}
-.fld{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}
-.fld>span{color:var(--mute);font-weight:600}
-.fld input{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:9px 12px;
-  width:132px;text-align:right;font-size:16px;min-width:0;font-weight:700;transition:border-color .2s}
-.fld input:focus{outline:0;border-color:var(--ac);box-shadow:0 0 0 3px var(--acs)}
-.step{display:flex;align-items:center;gap:12px}
-.step button{width:36px;height:36px;border-radius:50%;background:var(--acs);color:var(--ac);font-size:19px;
-  line-height:1;font-weight:700;transition:all .15s}
-.step button:hover:not(:disabled){transform:scale(1.08)}
-.step b{min-width:20px;text-align:center;font-size:16px}
-.ghost{border:0;background:var(--acs);color:var(--ac);border-radius:14px;padding:11px;font-weight:800;
-  min-height:44px;transition:all .2s}
-.ghost:hover:not(:disabled){background:var(--ac);color:#fff}
-
-/* ---- Calendrier ---- */
-.cal-head{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:800;text-transform:capitalize;margin:4px 2px 0}
-.mn{display:flex;gap:6px}
-.mn button{border:0;background:var(--soft);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;transition:all .15s}
-.mn button:hover{background:var(--acs);color:var(--ac)}
-.cal{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:13px;row-gap:2px}
-.cal span{color:var(--mute);font-size:11px;font-weight:700;padding:4px 0}
-.cal button{border:0;background:none;height:36px;border-radius:50%;font-weight:600;transition:all .15s}
-.cal button:hover:not(:disabled):not(.e){background:var(--acs);color:var(--ac)}
-.cal .in{background:var(--acs);border-radius:0}
-.cal .e{background:var(--grad);color:#fff;font-weight:800}
-.cal button:disabled{opacity:.32;cursor:default}
-
-/* ---- Historique ---- */
-.last{display:flex;gap:10px;align-items:center;background:var(--panel);border:1.5px solid var(--line);
-  border-radius:var(--r-sm);padding:8px;text-align:left;width:100%;transition:all .2s}
-.last:hover{border-color:var(--ac);transform:translateX(2px)}
-.last .th{width:44px;height:44px}
-.last b{display:block}
-.last small{color:var(--mute)}
-
-/* ---- Dock flottant ---- */
-.dock{position:fixed;z-index:20;left:50%;transform:translateX(-50%);
-  bottom:calc(14px + env(safe-area-inset-bottom,0px));width:min(580px,calc(100% - 24px));
-  background:var(--panel);color:var(--ink);border:1.5px solid var(--line);border-radius:22px;
-  padding:10px 10px 10px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 18px 44px rgba(20,45,100,.3)}
-.dock div{flex:1;min-width:0;line-height:1.25}
-.dock small{display:block;font-size:12px;color:var(--mute)}
-.dock b{font-size:19px;letter-spacing:-.3px}
-.dock .ov{color:var(--bad)!important;font-weight:700}
-.dock .un{color:var(--good)!important;font-weight:700}
-.pbar{height:5px;border-radius:99px;background:var(--line);margin-top:6px;overflow:hidden}
-.pbar i{display:block;height:100%;border-radius:99px;background:var(--grad);transition:width .4s ease}
-.pbar i.ov{background:linear-gradient(90deg,#e2703a,var(--bad))}
-.dock>button{border:0;background:var(--grad);color:#fff;border-radius:15px;padding:0 22px;min-height:48px;
-  font-weight:800;box-shadow:0 6px 16px rgba(33,104,192,.35);transition:all .2s;white-space:nowrap}
-.dock>button:hover:not(:disabled){transform:translateY(-1px)}
-.dock>button:disabled{opacity:.45;box-shadow:none}
-
-/* ---- Feuille de validation ---- */
-.scrim{position:fixed;inset:0;z-index:30;background:rgba(8,14,35,.55);backdrop-filter:blur(6px);
-  display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
-.sheet{background:var(--panel);width:100%;max-width:520px;max-height:90dvh;overflow:auto;
-  border-radius:28px 28px 0 0;padding:24px 22px calc(24px + env(safe-area-inset-bottom,0px));
-  animation:up .3s cubic-bezier(.2,.8,.2,1);box-shadow:0 -18px 60px rgba(0,0,0,.3)}
-@media (min-width:640px){.scrim{align-items:center}.sheet{border-radius:28px}}
-@keyframes up{from{transform:translateY(50px);opacity:0}}
-@keyframes fade{from{opacity:0}}
-.sheet header{display:flex;justify-content:space-between;align-items:center}
-.sheet h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.4px}
-.link{border:0;background:none;color:var(--mute);min-height:40px;padding:0 4px;text-decoration:underline;font-weight:600}
-.it{display:flex;justify-content:space-between;gap:12px;padding:14px 0;border-top:1px solid var(--line);font-weight:600}
-.it small{display:block;color:var(--mute);font-weight:500}
-.it strong{white-space:nowrap}
-.it .link{color:var(--bad);font-size:13px}
-.ck{display:flex;gap:12px;align-items:flex-start;margin:16px 0;color:var(--mute);font-size:14px}
-.ck input{width:22px;height:22px;accent-color:var(--ac);flex:none;margin-top:1px}
-.pay{width:100%;border:0;background:var(--grad);color:#fff;border-radius:16px;min-height:54px;
-  font-weight:800;font-size:16.5px;box-shadow:0 10px 24px rgba(33,104,192,.4);transition:all .2s}
-.pay:hover:not(:disabled){transform:translateY(-1px)}
-.pay:disabled{opacity:.45;box-shadow:none}
-
-@media (prefers-reduced-motion:reduce){.scrim,.sheet,.spin,.orb{animation:none}*{transition:none!important}}
